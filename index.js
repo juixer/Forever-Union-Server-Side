@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 // middleware for
 app.use(express.json());
@@ -28,11 +28,12 @@ async function run() {
     const usersCollection = dataBase.collection("users");
 
     // BIO DATA COLLECTION
+
+    // get all biodata for card
     app.get("/biodatas", async (req, res) => {
       try {
         const option = {
           projection: {
-            _id: 1,
             biodataId: 1,
             gender: 1,
             name: 1,
@@ -49,13 +50,13 @@ async function run() {
       }
     });
 
+    // get premium user bio datas
     app.get("/biodatas/premium", async (req, res) => {
       try {
         const query = { status: "premium" };
         const option = {
           sort: { age: 1 },
           projection: {
-            _id: 1,
             biodataId: 1,
             gender: 1,
             name: 1,
@@ -72,7 +73,43 @@ async function run() {
       }
     });
 
+    // get single bio data information
+    app.get("/biodata/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await bioDataCollection.findOne(query);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // get gender wise data
+    app.get("/biodatas/gender/:gender", async (req, res) => {
+      const gender = req.params.gender;
+      const query = { gender: gender };
+      const option = {
+        projection: {
+          biodataId: 1,
+          gender: 1,
+          name: 1,
+          age: 1,
+          occupation: 1,
+          permanentDivision: 1,
+          profileImage: 1,
+        },
+      };
+      const result = await bioDataCollection
+        .find(query, option)
+        .limit(4)
+        .toArray();
+      res.send(result);
+    });
+
     // Users collections
+
+    // add users to users collection
     app.post("/users", async (req, res) => {
       try {
         const user = req.body;
