@@ -112,16 +112,52 @@ async function run() {
       }
     });
 
+    // Insert bio data
+    app.put("/biodatas", async (req, res) => {
+      const bioData = req.body;
+
+      const filter = {contactEmail : bioData.contactEmail}
+
+      const options = {
+        upsert: true,
+      };
+
+      const updateDoc = {
+        $set: {
+          name: bioData.name,
+          profileImage: bioData.profileImage,
+          gender: bioData.gender,
+          dateOfBirth: bioData.dateOfBirth,
+          height: bioData.height,
+          weight: bioData.weight,
+          age: bioData.age,
+          occupation: bioData.occupation,
+          race: bioData.race,
+          fathersName: bioData.fathersName,
+          mothersName: bioData.mothersName,
+          expectedPartnerAge: bioData.expectedPartnerAge,
+          expectedPartnerHeight: bioData.expectedPartnerHeight,
+          expectedPartnerWeight: bioData.expectedPartnerWeight,
+          contactEmail: bioData.contactEmail,
+          mobileNumber: bioData.mobileNumber,
+          permanentDivision: bioData.permanentDivision,
+          presentDivision: bioData.presentDivision,
+        },
+      };
+      const result = await bioDataCollection.updateOne(filter,updateDoc,options)
+      res.send(result);
+    });
+
     // favorite collections
 
     // insert favorite biodata
     app.post("/favorite", async (req, res) => {
       try {
         const fav = req.body;
-        const query = {biodataId : fav.biodataId};
+        const query = { biodataId: fav.biodataId };
         const existedFav = await favCollection.findOne(query);
-        if(existedFav){
-          return {message: 'This BioData Already added'}
+        if (existedFav) {
+          return { message: "This BioData Already added" };
         }
         const result = await favCollection.insertOne(fav);
         res.send(result);
