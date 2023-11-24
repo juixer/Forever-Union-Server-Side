@@ -26,6 +26,7 @@ async function run() {
     const dataBase = client.db("forever_union");
     const bioDataCollection = dataBase.collection("biodatas");
     const usersCollection = dataBase.collection("users");
+    const favCollection = dataBase.collection("favorites");
 
     // BIO DATA COLLECTION
 
@@ -87,24 +88,46 @@ async function run() {
 
     // get gender wise data
     app.get("/biodatas/gender/:gender", async (req, res) => {
-      const gender = req.params.gender;
-      const query = { gender: gender };
-      const option = {
-        projection: {
-          biodataId: 1,
-          gender: 1,
-          name: 1,
-          age: 1,
-          occupation: 1,
-          permanentDivision: 1,
-          profileImage: 1,
-        },
-      };
-      const result = await bioDataCollection
-        .find(query, option)
-        .limit(4)
-        .toArray();
-      res.send(result);
+      try {
+        const gender = req.params.gender;
+        const query = { gender: gender };
+        const option = {
+          projection: {
+            biodataId: 1,
+            gender: 1,
+            name: 1,
+            age: 1,
+            occupation: 1,
+            permanentDivision: 1,
+            profileImage: 1,
+          },
+        };
+        const result = await bioDataCollection
+          .find(query, option)
+          .limit(4)
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // favorite collections
+
+    // insert favorite biodata
+    app.post("/favorite", async (req, res) => {
+      try {
+        const fav = req.body;
+        const query = {biodataId : fav.biodataId};
+        const existedFav = await favCollection.findOne(query);
+        if(existedFav){
+          return {message: 'This BioData Already added'}
+        }
+        const result = await favCollection.insertOne(fav);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
     });
 
     // Users collections
