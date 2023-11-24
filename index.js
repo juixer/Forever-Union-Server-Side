@@ -22,13 +22,55 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
-
-
     // DATABASE COLLECTION
     const dataBase = client.db("forever_union");
+    const bioDataCollection = dataBase.collection("biodatas");
     const usersCollection = dataBase.collection("users");
 
+    // BIO DATA COLLECTION
+    app.get("/biodatas", async (req, res) => {
+      try {
+        const option = {
+          projection: {
+            _id: 1,
+            biodataId: 1,
+            gender: 1,
+            name: 1,
+            age: 1,
+            occupation: 1,
+            permanentDivision: 1,
+            profileImage: 1,
+          },
+        };
+        const result = await bioDataCollection.find({}, option).toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
+    app.get("/biodatas/premium", async (req, res) => {
+      try {
+        const query = { status: "premium" };
+        const option = {
+          sort: { age: 1 },
+          projection: {
+            _id: 1,
+            biodataId: 1,
+            gender: 1,
+            name: 1,
+            age: 1,
+            occupation: 1,
+            permanentDivision: 1,
+            profileImage: 1,
+          },
+        };
+        const result = await bioDataCollection.find(query, option).toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     // Users collections
     app.post("/users", async (req, res) => {
@@ -46,9 +88,7 @@ async function run() {
       }
     });
 
-
-
-    
+    //
 
     await client.db("admin").command({ ping: 1 });
     console.log(
