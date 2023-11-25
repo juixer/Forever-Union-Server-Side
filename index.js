@@ -140,21 +140,82 @@ async function run() {
     });
 
     // remove admin
-    app.patch("/users/removeAdmin/:id", verify, verifyAdmin, async (req, res) => {
-      try {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            role: "guest",
-          },
-        };
-        const result = await usersCollection.updateOne(query, updateDoc);
-        res.send(result);
-      } catch (err) {
-        console.log(err);
+    app.patch(
+      "/users/removeAdmin/:id",
+      verify,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: {
+              role: "guest",
+            },
+          };
+          const result = await usersCollection.updateOne(query, updateDoc);
+          res.send(result);
+        } catch (err) {
+          console.log(err);
+        }
       }
-    });
+    );
+
+    // make premium users
+    app.patch(
+      "/users/makePremium/:email",
+      verify,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const email = req.params.email;
+          const query = { email: email };
+          const updateDoc = {
+            $set: {
+              status: "premium",
+            },
+          };
+          const userResult = await usersCollection.updateOne(query, updateDoc);
+
+          const bioDataQuery = { contactEmail: email };
+          const bioDataResult = await bioDataCollection.updateOne(
+            bioDataQuery,
+            updateDoc
+          );
+          res.send({ userResult, bioDataResult });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    );
+
+    // make premium users
+    app.patch(
+      "/users/removePremium/:email",
+      verify,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const email = req.params.email;
+          const query = { email: email };
+          const updateDoc = {
+            $set: {
+              status: "normal",
+            },
+          };
+          const userResult = await usersCollection.updateOne(query, updateDoc);
+
+          const bioDataQuery = { contactEmail: email };
+          const bioDataResult = await bioDataCollection.updateOne(
+            bioDataQuery,
+            updateDoc
+          );
+          res.send({ userResult, bioDataResult });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    );
 
     // BIO DATA COLLECTION
 
@@ -195,7 +256,10 @@ async function run() {
             profileImage: 1,
           },
         };
-        const result = await bioDataCollection.find(query, option).limit(6).toArray();
+        const result = await bioDataCollection
+          .find(query, option)
+          .limit(6)
+          .toArray();
         res.send(result);
       } catch (err) {
         console.log(err);
