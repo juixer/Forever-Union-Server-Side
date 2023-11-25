@@ -102,8 +102,34 @@ async function run() {
 
     // get all users
     app.get("/users", verify, verifyAdmin, async (req, res) => {
-      const result = await usersCollection.find().toArray();
+      try {
+        const result = await usersCollection.find().toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // get user status
+    app.get("/user/isPremium/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await usersCollection.findOne(query);
       res.send(result);
+    });
+
+    // get pending premium users
+    app.get("/users/pending", verify, verifyAdmin, async (req, res) => {
+      try {
+        const query = { status: "pending" };
+        const options = {
+          projection: { status: 1, contactEmail: 1, biodataId: 1, name: 1 },
+        };
+        const result = await bioDataCollection.find(query, options).toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
     });
 
     // add users to users collection
@@ -265,6 +291,8 @@ async function run() {
         console.log(err);
       }
     });
+
+    // get pending Status
 
     // get single bio data information
     app.get("/biodata/:id", async (req, res) => {
