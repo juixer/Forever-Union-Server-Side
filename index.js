@@ -323,8 +323,11 @@ async function run() {
           },
         };
         const result = await bioDataCollection
-          .find(query, option)
-          .limit(4)
+          .aggregate([
+            { $match: query },
+            { $sample: { size: 3 } },
+            { $project: option.projection },
+          ])
           .toArray();
         res.send(result);
       } catch (err) {
