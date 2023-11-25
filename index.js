@@ -191,7 +191,39 @@ async function run() {
       }
     });
 
+    // request for premium
+    app.patch("/biodatas", async (req, res) => {
+      try {
+        const bioData = req.body;
+        const filter = { contactEmail: bioData.contactEmail };
+        const updateDoc = {
+          $set: {
+            status: bioData.status,
+          },
+        };
+        const result = await bioDataCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
     // favorite collections
+
+    // get user wise favorites collection
+    app.get("/favorite/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const filter = { userEmail: email };
+        const option = {
+          sort: { _id: -1 },
+        };
+        const result = await favCollection.find(filter, option).toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     // insert favorite biodata
     app.post("/favorite", async (req, res) => {
@@ -203,6 +235,18 @@ async function run() {
           return { message: "This BioData Already added" };
         }
         const result = await favCollection.insertOne(fav);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // delete Favorite bio data
+    app.delete("/favorite/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await favCollection.deleteOne(query);
         res.send(result);
       } catch (err) {
         console.log(err);
