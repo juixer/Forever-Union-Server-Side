@@ -112,40 +112,83 @@ async function run() {
       }
     });
 
+    // get specific data
+    app.get("/mydata/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const query = { contactEmail: email };
+        const result = await bioDataCollection.findOne(query);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
     // Insert bio data
     app.put("/biodatas", async (req, res) => {
-      const bioData = req.body;
+      try {
+        const bioData = req.body;
 
-      const filter = {contactEmail : bioData.contactEmail}
+        const filter = { contactEmail: bioData.contactEmail };
 
-      const options = {
-        upsert: true,
-      };
+        const existingBioData = await bioDataCollection.findOne(filter);
 
-      const updateDoc = {
-        $set: {
-          name: bioData.name,
-          profileImage: bioData.profileImage,
-          gender: bioData.gender,
-          dateOfBirth: bioData.dateOfBirth,
-          height: bioData.height,
-          weight: bioData.weight,
-          age: bioData.age,
-          occupation: bioData.occupation,
-          race: bioData.race,
-          fathersName: bioData.fathersName,
-          mothersName: bioData.mothersName,
-          expectedPartnerAge: bioData.expectedPartnerAge,
-          expectedPartnerHeight: bioData.expectedPartnerHeight,
-          expectedPartnerWeight: bioData.expectedPartnerWeight,
-          contactEmail: bioData.contactEmail,
-          mobileNumber: bioData.mobileNumber,
-          permanentDivision: bioData.permanentDivision,
-          presentDivision: bioData.presentDivision,
-        },
-      };
-      const result = await bioDataCollection.updateOne(filter,updateDoc,options)
-      res.send(result);
+        if (existingBioData) {
+          const updateDoc = {
+            $set: {
+              name: bioData.name,
+              profileImage: bioData.profileImage,
+              gender: bioData.gender,
+              dateOfBirth: bioData.dateOfBirth,
+              height: bioData.height,
+              weight: bioData.weight,
+              age: bioData.age,
+              occupation: bioData.occupation,
+              race: bioData.race,
+              fathersName: bioData.fathersName,
+              mothersName: bioData.mothersName,
+              expectedPartnerAge: bioData.expectedPartnerAge,
+              expectedPartnerHeight: bioData.expectedPartnerHeight,
+              expectedPartnerWeight: bioData.expectedPartnerWeight,
+              contactEmail: bioData.contactEmail,
+              mobileNumber: bioData.mobileNumber,
+              permanentDivision: bioData.permanentDivision,
+              presentDivision: bioData.presentDivision,
+            },
+          };
+          const result = await bioDataCollection.updateOne(filter, updateDoc);
+          res.send(result);
+        } else {
+          const totalBioData = await bioDataCollection.estimatedDocumentCount();
+
+          const newBioData = {
+            biodataId: totalBioData + 1,
+            name: bioData.name,
+            profileImage: bioData.profileImage,
+            gender: bioData.gender,
+            dateOfBirth: bioData.dateOfBirth,
+            height: bioData.height,
+            weight: bioData.weight,
+            age: bioData.age,
+            occupation: bioData.occupation,
+            race: bioData.race,
+            fathersName: bioData.fathersName,
+            mothersName: bioData.mothersName,
+            expectedPartnerAge: bioData.expectedPartnerAge,
+            expectedPartnerHeight: bioData.expectedPartnerHeight,
+            expectedPartnerWeight: bioData.expectedPartnerWeight,
+            contactEmail: bioData.contactEmail,
+            mobileNumber: bioData.mobileNumber,
+            permanentDivision: bioData.permanentDivision,
+            presentDivision: bioData.presentDivision,
+          };
+
+          const result = await bioDataCollection.insertOne(newBioData);
+          res.send(result);
+        }
+      } catch (err) {
+        console.log(err);
+      }
     });
 
     // favorite collections
