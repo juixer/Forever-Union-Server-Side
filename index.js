@@ -40,7 +40,7 @@ async function run() {
     const favCollection = dataBase.collection("favorites");
     const paymentCollection = dataBase.collection("payments");
     const contactReqCollection = dataBase.collection("contactRequests");
-    const successStory = dataBase.collection('successStory');
+    const successStory = dataBase.collection("successStory");
 
     ////////////////////////////////////////////// JWT Authorization///////////////////////
     app.post("/jwt", async (req, res) => {
@@ -599,15 +599,24 @@ async function run() {
 
     ////////////////////////////SUccess Story Collection////////////////////////////
 
-    app.post('/successStory', async (req, res) => {
-      try{
-        const story = req.body;
-        const result = await successStory.insertOne(story)
+    app.get("/getSuccessStory", async (req, res) => {
+      try {
+        const result = await successStory.find().toArray();
         res.send(result);
-      }catch(err){
+      } catch (err) {
         console.log(err);
       }
-    })
+    });
+
+    app.post("/successStory", async (req, res) => {
+      try {
+        const story = req.body;
+        const result = await successStory.insertOne(story);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     //////////////////////////////////////mongodb connection////////////////////////////////
     await client.db("admin").command({ ping: 1 });
