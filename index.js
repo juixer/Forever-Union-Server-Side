@@ -39,7 +39,7 @@ async function run() {
     const usersCollection = dataBase.collection("users");
     const favCollection = dataBase.collection("favorites");
     const paymentCollection = dataBase.collection("payments");
-    const contactReqCollection = dataBase.collection('contactRequests')
+    const contactReqCollection = dataBase.collection("contactRequests");
 
     /////////////////////////////////////////////////////// JWT Authorization//////////////////////////////////////////////////////
     app.post("/jwt", async (req, res) => {
@@ -454,7 +454,7 @@ async function run() {
     });
 
     // insert favorite biodata
-    app.post("/favorite",verify, async (req, res) => {
+    app.post("/favorite", verify, async (req, res) => {
       try {
         const fav = req.body;
         const result = await favCollection.insertOne(fav);
@@ -465,7 +465,7 @@ async function run() {
     });
 
     // delete Favorite bio data
-    app.delete("/favorite/:id",verify, async (req, res) => {
+    app.delete("/favorite/:id", verify, async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
@@ -480,10 +480,21 @@ async function run() {
 
     // get payment and contact information
 
-    app.get("/contactRequest/:email",verify, async (req, res) => {
+    app.get("/contactRequest/:email", verify, async (req, res) => {
       try {
         const email = req.params.email;
         const query = { email: email };
+        const result = await contactReqCollection.find(query).toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // get only pending request
+    app.get("/pendingContact", verify, verifyAdmin, async (req, res) => {
+      try {
+        const query = { contactStatus: "pending" };
         const result = await contactReqCollection.find(query).toArray();
         res.send(result);
       } catch (err) {
@@ -521,13 +532,13 @@ async function run() {
         const payment = req.body;
 
         const paymentDoc = {
-          $set:{
+          $set: {
             payment: payment.price,
             email: payment.email,
             name: payment.name,
             transID: payment.transID,
-          }
-        }
+          },
+        };
 
         const contactDoc = {
           $set: {
@@ -538,31 +549,52 @@ async function run() {
             userBiodataId: payment.userBiodataId,
             reqEmail: payment.reqEmail,
             reqPhone: payment.reqPhone,
-            contactStatus: payment.contactStatus
-          }
-        }
+            contactStatus: payment.contactStatus,
+          },
+        };
 
+        const paymentResult = await paymentCollection.insertOne(
+          paymentDoc.$set
+        );
+        const contactResult = await contactReqCollection.insertOne(
+          contactDoc.$set
+        );
+        res.send({ paymentResult, contactResult });
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
-        const paymentResult = await paymentCollection.insertOne(paymentDoc.$set);
-        const contactResult = await contactReqCollection.insertOne(contactDoc.$set);
-        res.send({paymentResult, contactResult});
+    // give user to contact request
+
+    app.patch("/approveContactRequest/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+
+        const updateDoc = {
+          $set: {
+            contactStatus: "approved",
+          },
+        };
+        const result = await contactReqCollection.updateOne(query, updateDoc);
+        res.send(result);
       } catch (err) {
         console.log(err);
       }
     });
 
     // delete contact request
-    app.delete('/contactRequest/:id', async (req, res) => {
-      try{
-          const id = req.params.id;
-          const query = {_id : new ObjectId(id)}
-          const result = await contactReqCollection.deleteOne(query)
-          res.send(result)
-      }catch(err){
+    app.delete("/contactRequest/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await contactReqCollection.deleteOne(query);
+        res.send(result);
+      } catch (err) {
         console.log(err);
       }
-
-    })
+    });
 
     ////////////////////////////////////////////////////////////mongodb connection/////////////////////////////////////////////////
     await client.db("admin").command({ ping: 1 });
