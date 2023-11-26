@@ -6,8 +6,10 @@ const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-// middleware for
+///////////////////////////////////////////////////////// middleware///////////////////////////////////////////////////////////////
+
 app.use(express.json());
 app.use(
   cors({
@@ -17,7 +19,7 @@ app.use(
 );
 app.use(cookieParser());
 
-// mongodb server
+//////////////////////////////////////////////////////////////// mongodb server/////////////////////////////////////////////////
 
 const uri = process.env.MONGO_URI;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -36,7 +38,7 @@ async function run() {
     const usersCollection = dataBase.collection("users");
     const favCollection = dataBase.collection("favorites");
 
-    // JWT Authorization
+    /////////////////////////////////////////////////////// JWT Authorization//////////////////////////////////////////////////////
     app.post("/jwt", async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
@@ -83,7 +85,7 @@ async function run() {
       next();
     };
 
-    // Users collections
+    ///////////////////////////////////////////////////////// Users collections///////////////////////////////////////////////////
 
     // get admin
     app.get("/admin/:email", verify, async (req, res) => {
@@ -243,7 +245,7 @@ async function run() {
       }
     );
 
-    // BIO DATA COLLECTION
+    /////////////////////////////////////////////////// BIO DATA COLLECTION////////////////////////////////////////////////////////////////
 
     // get all biodata for card
     app.get("/biodatas", async (req, res) => {
@@ -431,7 +433,7 @@ async function run() {
       }
     });
 
-    // favorite collections
+    /////////////////////////////////////////////////////////////// favorite collections////////////////////////////////////////////////
 
     // get user wise favorites collection
     app.get("/favorite/:email", async (req, res) => {
@@ -476,8 +478,30 @@ async function run() {
       }
     });
 
-    //
+    /////////////////////////////////////////////////////////////////////payments//////////////////////////////////////////////
 
+    app.post("/create-payment-intent", async (req, res) => {
+      try {
+        const { price } = req.body;
+
+        const amount = parseInt(price * 100);
+        console.log(amount);
+
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "usd",
+          payment_method_types: ["card"],
+        });
+
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    ////////////////////////////////////////////////////////////mongodb connection/////////////////////////////////////////////////
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
@@ -489,7 +513,8 @@ async function run() {
 }
 run().catch(console.dir);
 
-// default routes
+//////////////////////////////////////////////////////////////// default routes///////////////////////////////////////////////
+
 app.get("/", (req, res) => {
   res.send("Welcome to the Forever Server");
 });
