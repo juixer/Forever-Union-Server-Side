@@ -618,6 +618,28 @@ async function run() {
       }
     });
 
+    /////////////////////////////////////Stats COllection///////////////////////////////////
+
+    app.get('/getStats', async (req, res) => {
+      try{
+
+        const totalBioData = await bioDataCollection.estimatedDocumentCount();
+        const totalMarriage = await successStory.estimatedDocumentCount();
+        
+        const totalBoyQuery = { gender: 'Male' };
+        const totalGirlQuery = { gender: 'Female' };
+        const Girls = await bioDataCollection.find(totalGirlQuery).toArray();
+        const Boys = await bioDataCollection.find(totalBoyQuery).toArray();
+        const totalBoys =  Boys.length;
+        const totalGirls = Girls.length;
+
+       res.send({totalBioData, totalBoys, totalGirls, totalMarriage})
+
+      }catch(err){
+        console.log(err);
+      }
+    })
+
     //////////////////////////////////////mongodb connection////////////////////////////////
     await client.db("admin").command({ ping: 1 });
     console.log(
