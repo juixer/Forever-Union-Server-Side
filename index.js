@@ -620,25 +620,55 @@ async function run() {
 
     /////////////////////////////////////Stats COllection///////////////////////////////////
 
-    app.get('/getStats', async (req, res) => {
-      try{
+    app.get("/adminStats", verify, verifyAdmin, async (req, res) => {
+      try {
+        const totalPremiumQuery = { status: "premium" };
 
-        const totalBioData = await bioDataCollection.estimatedDocumentCount();
-        const totalMarriage = await successStory.estimatedDocumentCount();
-        
-        const totalBoyQuery = { gender: 'Male' };
-        const totalGirlQuery = { gender: 'Female' };
-        const Girls = await bioDataCollection.find(totalGirlQuery).toArray();
-        const Boys = await bioDataCollection.find(totalBoyQuery).toArray();
-        const totalBoys =  Boys.length;
-        const totalGirls = Girls.length;
+        const Revenue = await paymentCollection
+          .aggregate([
+            {
+              $group: {
+                _id: null,
+                totalRevenue: {
+                  $sum: "$payment",
+                },
+              },
+            },
+          ])
+          .toArray();
 
-       res.send({totalBioData, totalBoys, totalGirls, totalMarriage})
+        const totalRevenues = Revenue.length > 0 ? Revenue[0].totalRevenue : 0;
 
-      }catch(err){
+        const Premium = await bioDataCollection
+          .find(totalPremiumQuery)
+          .toArray();
+        const totalPremium = Premium.length;
+
+        res.send({ totalPremium, totalRevenues });
+      } catch (err) {
         console.log(err);
       }
-    })
+    });
+
+    app.get("/getStats", async (req, res) => {
+      try {
+        const totalBioData = await bioDataCollection.estimatedDocumentCount();
+        const totalMarriage = await successStory.estimatedDocumentCount();
+
+        const totalBoyQuery = { gender: "Male" };
+        const totalGirlQuery = { gender: "Female" };
+
+        const Girls = await bioDataCollection.find(totalGirlQuery).toArray();
+        const Boys = await bioDataCollection.find(totalBoyQuery).toArray();
+
+        const totalBoys = Boys.length;
+        const totalGirls = Girls.length;
+
+        res.send({ totalBioData, totalBoys, totalGirls, totalMarriage });
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     //////////////////////////////////////mongodb connection////////////////////////////////
     await client.db("admin").command({ ping: 1 });
