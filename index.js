@@ -32,11 +32,14 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
-    // DATABASE COLLECTION
+    ////////////////////////////////////////// DATABASE COLLECTION///////////////////////////////////////////////////////
+
     const dataBase = client.db("forever_union");
     const bioDataCollection = dataBase.collection("biodatas");
     const usersCollection = dataBase.collection("users");
     const favCollection = dataBase.collection("favorites");
+    const paymentCollection = dataBase.collection("payments");
+    const contactReqCollection = dataBase.collection('contactRequests')
 
     /////////////////////////////////////////////////////// JWT Authorization//////////////////////////////////////////////////////
     app.post("/jwt", async (req, res) => {
@@ -451,14 +454,9 @@ async function run() {
     });
 
     // insert favorite biodata
-    app.post("/favorite", async (req, res) => {
+    app.post("/favorite",verify, async (req, res) => {
       try {
         const fav = req.body;
-        const query = { biodataId: fav.biodataId };
-        const existedFav = await favCollection.findOne(query);
-        if (existedFav) {
-          return { message: "This BioData Already added" };
-        }
         const result = await favCollection.insertOne(fav);
         res.send(result);
       } catch (err) {
@@ -467,7 +465,7 @@ async function run() {
     });
 
     // delete Favorite bio data
-    app.delete("/favorite/:id", async (req, res) => {
+    app.delete("/favorite/:id",verify, async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
@@ -478,7 +476,22 @@ async function run() {
       }
     });
 
-    /////////////////////////////////////////////////////////////////////payments//////////////////////////////////////////////
+    /////////////////////////////////////////////payments & contact request//////////////////////////////////////////////////////
+
+    // get payment and contact information
+
+    app.get("/contactRequest/:email",verify, async (req, res) => {
+      try {
+        const email = req.params.email;
+        const query = { email: email };
+        const result = await contactReqCollection.find(query).toArray();
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // stripe
 
     app.post("/create-payment-intent", async (req, res) => {
       try {
@@ -500,6 +513,56 @@ async function run() {
         console.log(err);
       }
     });
+
+    // insert payment
+
+    app.post("/payments", async (req, res) => {
+      try {
+        const payment = req.body;
+
+        const paymentDoc = {
+          $set:{
+            payment: payment.price,
+            email: payment.email,
+            name: payment.name,
+            transID: payment.transID,
+          }
+        }
+
+        const contactDoc = {
+          $set: {
+            email: payment.email,
+            name: payment.name,
+            reqName: payment.reqName,
+            reqBiodataId: payment.reqBiodataId,
+            userBiodataId: payment.userBiodataId,
+            reqEmail: payment.reqEmail,
+            reqPhone: payment.reqPhone,
+            contactStatus: payment.contactStatus
+          }
+        }
+
+
+        const paymentResult = await paymentCollection.insertOne(paymentDoc.$set);
+        const contactResult = await contactReqCollection.insertOne(contactDoc.$set);
+        res.send({paymentResult, contactResult});
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // delete contact request
+    app.delete('/contactRequest/:id', async (req, res) => {
+      try{
+          const id = req.params.id;
+          const query = {_id : new ObjectId(id)}
+          const result = await contactReqCollection.deleteOne(query)
+          res.send(result)
+      }catch(err){
+        console.log(err);
+      }
+
+    })
 
     ////////////////////////////////////////////////////////////mongodb connection/////////////////////////////////////////////////
     await client.db("admin").command({ ping: 1 });
