@@ -275,6 +275,8 @@ async function run() {
           query.permanentDivision = division
         }
         
+        const page_size = 6
+        const page = req.query.page
 
         const option = {
           projection: {
@@ -287,8 +289,13 @@ async function run() {
             profileImage: 1,
           },
         };
-        const result = await bioDataCollection.find(query, option).toArray();
-        res.send(result);
+
+        const count = await bioDataCollection.countDocuments(query)
+
+        const result = await bioDataCollection.find(query, option).skip(parseInt(page) * page_size).limit(page_size).toArray();
+
+        
+        res.send({result, count});
       } catch (err) {
         console.log(err);
       }
