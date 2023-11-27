@@ -109,7 +109,9 @@ async function run() {
     // get all users
     app.get("/users", verify, verifyAdmin, async (req, res) => {
       try {
-        const result = await usersCollection.find().toArray();
+        const search = req.query.search;
+        const query = {name: {$regex: search, $options: 'i'}}
+        const result = await usersCollection.find(query).toArray();
         res.send(result);
       } catch (err) {
         console.log(err);
