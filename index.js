@@ -13,7 +13,11 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://forever-union.web.app",
+      "https://forever-union.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -261,22 +265,22 @@ async function run() {
         const gender = req.query.gender;
         const division = req.query.division;
 
-        let query = {}
-        
-        if(minAge && maxAge) {
-          query.age ={$gte:minAge, $lte:maxAge}
+        let query = {};
+
+        if (minAge && maxAge) {
+          query.age = { $gte: minAge, $lte: maxAge };
         }
 
-        if(gender){
-          query.gender = gender
+        if (gender) {
+          query.gender = gender;
         }
 
-        if(division){
-          query.permanentDivision = division
+        if (division) {
+          query.permanentDivision = division;
         }
-        
-        const page_size = 6
-        const page = req.query.page
+
+        const page_size = 6;
+        const page = req.query.page;
 
         const option = {
           projection: {
@@ -290,12 +294,15 @@ async function run() {
           },
         };
 
-        const count = await bioDataCollection.countDocuments(query)
+        const count = await bioDataCollection.countDocuments(query);
 
-        const result = await bioDataCollection.find(query, option).skip(parseInt(page) * page_size).limit(page_size).toArray();
+        const result = await bioDataCollection
+          .find(query, option)
+          .skip(parseInt(page) * page_size)
+          .limit(page_size)
+          .toArray();
 
-        
-        res.send({result, count});
+        res.send({ result, count });
       } catch (err) {
         console.log(err);
       }
@@ -630,7 +637,10 @@ async function run() {
 
     app.get("/getSuccessStory", async (req, res) => {
       try {
-        const result = await successStory.find().toArray();
+        const option = {
+          sort: { marriageDate: 1 },
+        };
+        const result = await successStory.find({}, option).toArray();
         res.send(result);
       } catch (err) {
         console.log(err);
@@ -700,10 +710,10 @@ async function run() {
     });
 
     //////////////////////////////////////mongodb connection////////////////////////////////
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
