@@ -110,7 +110,7 @@ async function run() {
     app.get("/users", verify, verifyAdmin, async (req, res) => {
       try {
         const search = req.query.search;
-        const query = {name: {$regex: search, $options: 'i'}}
+        const query = { name: { $regex: search, $options: "i" } };
         const result = await usersCollection.find(query).toArray();
         res.send(result);
       } catch (err) {
@@ -256,6 +256,26 @@ async function run() {
     // get all biodata for card
     app.get("/biodatas", async (req, res) => {
       try {
+        const minAge = parseInt(req.query.minAge);
+        const maxAge = parseInt(req.query.maxAge);
+        const gender = req.query.gender;
+        const division = req.query.division;
+
+        let query = {}
+        
+        if(minAge && maxAge) {
+          query.age ={$gte:minAge, $lte:maxAge}
+        }
+
+        if(gender){
+          query.gender = gender
+        }
+
+        if(division){
+          query.permanentDivision = division
+        }
+        
+
         const option = {
           projection: {
             biodataId: 1,
@@ -267,7 +287,7 @@ async function run() {
             profileImage: 1,
           },
         };
-        const result = await bioDataCollection.find({}, option).toArray();
+        const result = await bioDataCollection.find(query, option).toArray();
         res.send(result);
       } catch (err) {
         console.log(err);
@@ -373,7 +393,7 @@ async function run() {
               dateOfBirth: bioData.dateOfBirth,
               height: bioData.height,
               weight: bioData.weight,
-              age: bioData.age,
+              age: parseInt(bioData.age),
               occupation: bioData.occupation,
               race: bioData.race,
               fathersName: bioData.fathersName,
